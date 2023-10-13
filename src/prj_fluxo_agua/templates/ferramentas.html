@@ -1,0 +1,137 @@
+{% extends 'base.html' %} {% load static %} {% block conteudo %}
+<!DOCTYPE html>
+
+<!--Ferramentas de Análise-->
+<div class="row mt-5" id="ferramenta">
+  <div class="text-center text-bg-light">
+    <h1>Ferramenta de Análise de Consumo</h1>
+  </div>
+
+  <div class="col-md-2">
+    <div class="mb-3">
+      <label class="form-control">Data Inicial: </label>
+    </div>
+    <div class="mb-3">
+      <label class="form-control">Hora Inicial: </label>
+    </div>
+    <div class="mb-3">
+      <label class="form-control">Data Final: </label>
+    </div>
+    <div class="mb-3">
+      <label class="form-control">Hora Final: </label>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="mb-3">
+      <input
+        type="date"
+        class="form-control"
+        id="dataInicial"
+        aria-describedby="dataIniHelp"
+        placeholder="Data Inicial"
+      />
+    </div>
+    <div class="mb-3">
+      <input
+        type="time"
+        class="form-control"
+        id="tempoInicial"
+        aria-describedby="tempoIniHelp"
+        step="1"
+      />
+      
+    </div>
+    <div class="mb-3">
+      <input
+        type="date"
+        class="form-control"
+        id="dataFinal"
+        aria-describedby="dataFinHelp"
+      />
+    </div>
+
+    <div class="mb-3">
+      <input
+        type="time"
+        class="form-control"
+        id="tempoFinal"
+        aria-describedby="tempoFinHelp"
+        step="1"
+      />
+    </div>
+  </div>
+  <div class="col-md-3">
+   
+    <div class="mb-3">
+      <select
+        id="opDataInicial"
+        class="form-select"
+        aria-label="Default select example"
+      >
+        <option selected>Opções</option>
+        <option value="1">Maior</option>
+        <option value="2">Maior ou Igual</option>
+        <option value="3">Menor</option>
+        <option value="4">Menor ou Igual</option>
+        <option value="5">Igual</option>
+        <option value="6">Nao Igual</option>
+      </select>
+    </div>
+    <div class="mb-3">
+      <select
+        id="opDataFinal"
+        class="form-select"
+        aria-label="Default select example"
+      >
+        <option selected value = "0">Opções</option>
+        <option value="1">Maior</option>
+        <option value="2">Maior ou Igual</option>
+        <option value="3">Menor</option>
+        <option value="4">Menor ou Igual</option>
+        <option value="5">Igual</option>
+        <option value="6">Não Igual</option>
+      </select>
+    </div>
+
+
+  </div>
+</div>
+    <button id="executar" type="submit" class="btn btn-primary">
+      Executar
+    </button>
+<!-- Fim Ferramentas de Análise-->
+
+<script type="text/javascript">
+  function analisarConsumo(dtinicial, dtfinal, tempinicial, tempfinal, opinicial, opfinal) {
+    $.get({
+      url: "{% url 'analisarconsumo' %}",
+      data: {
+        data_inicial: dtinicial,
+        data_final: dtfinal,
+        tempo_inicial: tempinicial,
+        tempo_final: tempfinal,
+        op_inicial:  opinicial,
+        op_final: opfinal
+      },
+    }).done(function (data) {
+      alert(data);
+    });
+  }
+  $("#executar").click(function () {
+    analisarConsumo(
+      $("#dataInicial").val(),
+      $("#dataFinal").val(),
+      $("#tempoInicial").val(),
+      $("#tempoFinal").val(),
+      $("#opDataInicial").val(),
+      $("#opDataFinal").val()
+    );
+
+    console.log($("#dataInicial").val());
+    console.log($("#dataFinal").val());
+    console.log($("#tempoInicial").val());
+    console.log($("#tempoFinal").val());
+  });
+</script>
+
+{% endblock %}

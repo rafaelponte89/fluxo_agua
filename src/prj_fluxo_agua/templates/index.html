@@ -1,0 +1,163 @@
+{% extends 'base.html' %} {% load static %} {% block conteudo %}
+<h1 class="mt-5">Gráficos sobre o consumo e conta Atual</h1>
+<div class="row">
+  <div class="col-md-4">
+    <canvas id="graficoConsumo" class="">
+      <!--Gráfico Consumo Aqui-->
+    </canvas>
+  </div>
+  <div class="col-md-4">
+    <canvas id="graficoConta" class="">
+      <!--Gráfico Conta Atual Aqui-->
+    </canvas>
+  </div>
+  <div class="col-md-4">
+    <div id="consumo">
+      <!--Tabela de Medida e o momento dessa medida-->
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script type="text/javascript">
+  $(document).ready(function () {
+    function get_chart(x, y, canvas, legenda) {
+      const labels = x;
+      const ctx = document.getElementById(canvas);
+      var mychart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: legenda,
+              data: y,
+              backgroundColor: [
+                "rgba(102, 217, 255, 0.5)",
+                "rgba(75, 192, 192, 0.5)",
+                "rgba(54, 162, 235, 0.5)",
+                "rgba(153, 102, 255, 0.5)",
+                "rgba(201, 203, 207, 0.5)",
+              ],
+              borderColor: [
+                "rgb(102, 217, 255)",
+                "rgb(255, 159, 64)",
+                "rgb(255, 205, 86)",
+                "rgb(75, 192, 192)",
+                "rgb(54, 162, 235)",
+                "rgb(153, 102, 255)",
+                "rgb(201, 203, 207)",
+              ],
+
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+            },
+          },
+        },
+      });
+      mychart.update("none");
+
+      return mychart;
+    }
+
+    function addData(chart, newData) {
+      chart.data.datasets.forEach((dataset) => {
+        dataset.data.push(newData);
+      });
+      chart.update();
+    }
+
+    // Gráfico da conta do mês atual
+    function gerarGraficoConta() {
+      $.get({
+        url: "{% url 'grafconta' %}",
+      }).done(function (data) {
+        var objJson = JSON.parse(data);
+        console.log(Object.keys(objJson));
+        console.log(Object.values(objJson));
+
+        var chartExist = Chart.getChart("graficoConta");
+
+        if (chartExist != undefined) {
+          chartExist.destroy();
+        }
+
+        addData(
+          get_chart(
+            Object.keys(objJson),
+            Object.values(objJson),
+            "graficoConta",
+            "Conta Mês Atual - R$"
+          ),
+          Object.values(objJson)
+        );
+      });
+    }
+
+    // Gráfico do mês atual em tempo real, atualizado a cada 1 s
+    function gerarGraficoConsumo() {
+      $.get({
+        url: "{% url 'grafconsumo' %}",
+      }).done(function (data) {
+        var listaMes = [];
+        var listaMedida = [];
+        var objJson = JSON.parse(data);
+        console.log(Object.keys(objJson));
+        console.log(Object.values(objJson));
+
+        var chartExist = Chart.getChart("graficoConsumo");
+
+        if (chartExist != undefined) {
+          chartExist.destroy();
+        }
+
+        addData(
+          get_chart(
+            Object.keys(objJson),
+            Object.values(objJson),
+            "graficoConsumo",
+            "Consumo Mês Atual - L(Litros)"
+          ),
+          Object.values(objJson)
+        );
+      });
+    }
+
+    // Tabela do consumo em tempo real, atualizada a cada 3 s exibe número limitado de linhas
+    function atualizarTabela() {
+      $.get({
+        url: "{% url 'lerfluxo' %}",
+      }).done(function (data) {
+        $("#consumo").html(data);
+        $(".dataframe").addClass("table");
+        $(".dataframe").addClass("table-bordered");
+        $(".dataframe").addClass("centered");
+        $(".dataframe").addClass("table-hover");
+        $(".dataframe").addClass("table-responsive-sm");
+        gerarGraficoConsumo();
+        gerarGraficoConta();
+      });
+    }
+
+    //gerarGraficoConsumo();
+    // gerarGraficoConta();
+    //setInterval(gerarGraficoConta, 1000);
+    //setInterval(gerarGraficoConsumo, 1000);
+    atualizarTabela();
+    setInterval(atualizarTabela, 3000);
+  });
+</script>
+
+{% endblock %}
