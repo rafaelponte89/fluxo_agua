@@ -71,15 +71,7 @@ def contar_dados(dataframe):
     
     return contador
 
-class NpEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, np.integer):
-            return int(obj)
-        if isinstance(obj, np.floating):
-            return float(obj)
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        return super(NpEncoder, self).default(obj)
+
 
 def analisar_consumo(request):
     dataframe = carregar_dataframe()
@@ -113,14 +105,14 @@ def analisar_consumo(request):
     desvio = calcular_desvio(dataframe["medida"])
     maior = calcular_maior(dataframe["medida"])
     menor = calcular_menor(dataframe["medida"])
-    contador = contar_dados(dataframe["medida"])
+    #contador = contar_dados(dataframe["medida"])
     
     medidas = {
         'media': float(media),
         'desvio': float(desvio),
         'maior': float(maior),
         'menor': float(menor),
-        'contador': float(contador),
+        
     }
     
     json_medidas = json.dumps(medidas, indent=4)

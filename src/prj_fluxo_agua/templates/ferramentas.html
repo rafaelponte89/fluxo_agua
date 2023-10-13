@@ -15,10 +15,16 @@
       <label class="form-control">Hora Inicial: </label>
     </div>
     <div class="mb-3">
+      <label class="form-control">Operação Inicial: </label>
+    </div>
+    <div class="mb-3">
       <label class="form-control">Data Final: </label>
     </div>
     <div class="mb-3">
       <label class="form-control">Hora Final: </label>
+    </div>
+    <div class="mb-3">
+      <label class="form-control">Operação Final: </label>
     </div>
   </div>
   <div class="col-md-2">
@@ -39,7 +45,20 @@
         aria-describedby="tempoIniHelp"
         step="1"
       />
-      
+    </div>
+    <div class="mb-3">
+      <select
+        id="opDataInicial"
+        class="form-select"
+        aria-label="Default select example"
+      >
+        <option value="1">Maior</option>
+        <option value="2">Maior ou Igual</option>
+        <option value="3">Menor</option>
+        <option value="4">Menor ou Igual</option>
+        <option value="5">Igual</option>
+        <option selected value="6">Não Igual</option>
+      </select>
     </div>
     <div class="mb-3">
       <input
@@ -59,78 +78,130 @@
         step="1"
       />
     </div>
-  </div>
-  <div class="col-md-3">
-   
-    <div class="mb-3">
-      <select
-        id="opDataInicial"
-        class="form-select"
-        aria-label="Default select example"
-      >
-        <option selected>Opções</option>
-        <option value="1">Maior</option>
-        <option value="2">Maior ou Igual</option>
-        <option value="3">Menor</option>
-        <option value="4">Menor ou Igual</option>
-        <option value="5">Igual</option>
-        <option value="6">Nao Igual</option>
-      </select>
-    </div>
     <div class="mb-3">
       <select
         id="opDataFinal"
         class="form-select"
         aria-label="Default select example"
       >
-        <option selected value = "0">Opções</option>
         <option value="1">Maior</option>
         <option value="2">Maior ou Igual</option>
         <option value="3">Menor</option>
         <option value="4">Menor ou Igual</option>
         <option value="5">Igual</option>
-        <option value="6">Não Igual</option>
+        <option selected value="6">Não Igual</option>
       </select>
     </div>
+  </div>
 
-
+  <div class="col-md-8">
+    <canvas id="graficoMedidas" class="">
+      <!--Gráfico Medidas Aqui-->
+    </canvas>
   </div>
 </div>
-    <button id="executar" type="submit" class="btn btn-primary">
-      Executar
-    </button>
+<button id="executar" type="submit" class="btn btn-primary">Executar</button>
 <!-- Fim Ferramentas de Análise-->
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script type="text/javascript">
-  function analisarConsumo(dtinicial, dtfinal, tempinicial, tempfinal, opinicial, opfinal) {
-    $.get({
-      url: "{% url 'analisarconsumo' %}",
-      data: {
-        data_inicial: dtinicial,
-        data_final: dtfinal,
-        tempo_inicial: tempinicial,
-        tempo_final: tempfinal,
-        op_inicial:  opinicial,
-        op_final: opfinal
-      },
-    }).done(function (data) {
-      alert(data);
-    });
-  }
-  $("#executar").click(function () {
-    analisarConsumo(
-      $("#dataInicial").val(),
-      $("#dataFinal").val(),
-      $("#tempoInicial").val(),
-      $("#tempoFinal").val(),
-      $("#opDataInicial").val(),
-      $("#opDataFinal").val()
-    );
+  $(document).ready(function () {
+    // função que gera gráfico
+    function get_chart(x, y, canvas, legenda) {
+      const labels = x;
+      const ctx = document.getElementById(canvas);
 
-    console.log($("#dataInicial").val());
-    console.log($("#dataFinal").val());
-    console.log($("#tempoInicial").val());
-    console.log($("#tempoFinal").val());
+      var chartExist = Chart.getChart(canvas);
+
+      if (chartExist != undefined) {
+        chartExist.destroy();
+      }
+
+      var mychart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: legenda,
+              data: y,
+              backgroundColor: [
+                "rgba(102, 217, 255, 0.5)",
+                "rgba(75, 192, 192, 0.5)",
+                "rgba(54, 162, 235, 0.5)",
+                "rgba(153, 102, 255, 0.5)",
+                "rgba(201, 203, 207, 0.5)",
+              ],
+              borderColor: [
+                "rgb(102, 217, 255)",
+                "rgb(255, 159, 64)",
+                "rgb(255, 205, 86)",
+                "rgb(75, 192, 192)",
+                "rgb(54, 162, 235)",
+                "rgb(153, 102, 255)",
+                "rgb(201, 203, 207)",
+              ],
+
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+            },
+          },
+        },
+      });
+
+      return mychart;
+    }
+
+    function analisarConsumo(
+      dtinicial,
+      dtfinal,
+      tempinicial,
+      tempfinal,
+      opinicial,
+      opfinal
+    ) {
+      $.get({
+        url: "{% url 'analisarconsumo' %}",
+        data: {
+          data_inicial: dtinicial,
+          data_final: dtfinal,
+          tempo_inicial: tempinicial,
+          tempo_final: tempfinal,
+          op_inicial: opinicial,
+          op_final: opfinal,
+        },
+      }).done(function (data) {
+        var objJson = JSON.parse(data);
+
+        get_chart(
+          Object.keys(objJson),
+          Object.values(objJson),
+          "graficoMedidas",
+          "Medidas"
+        );
+      });
+    }
+    $("#executar").click(function () {
+      analisarConsumo(
+        $("#dataInicial").val(),
+        $("#dataFinal").val(),
+        $("#tempoInicial").val(),
+        $("#tempoFinal").val(),
+        $("#opDataInicial").val(),
+        $("#opDataFinal").val()
+      );
+
+      console.log($("#dataInicial").val());
+      console.log($("#dataFinal").val());
+      console.log($("#tempoInicial").val());
+      console.log($("#tempoFinal").val());
+    });
   });
 </script>
 
