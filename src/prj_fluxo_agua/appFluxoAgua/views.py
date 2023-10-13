@@ -66,12 +66,15 @@ def calcular_menor(dataframe):
     
     return menor
     
-def contar_dados(dataframe):
-    contador = dataframe.count()
+def calcular_mediana(dataframe):
+    mediana = dataframe.median()
     
-    return contador
+    return mediana
 
-
+def calcular_moda(dataframe):
+    moda = dataframe.mode()
+    
+    return moda
 
 def analisar_consumo(request):
     dataframe = carregar_dataframe()
@@ -101,17 +104,21 @@ def analisar_consumo(request):
     print(selecao)
     dataframe = dataframe[selecao]
     
+    
     media = calcular_media(dataframe["medida"])
     desvio = calcular_desvio(dataframe["medida"])
     maior = calcular_maior(dataframe["medida"])
     menor = calcular_menor(dataframe["medida"])
-    #contador = contar_dados(dataframe["medida"])
+    mediana= calcular_mediana(dataframe["medida"])
+    moda = calcular_moda(dataframe["medida"])
     
     medidas = {
         'media': float(media),
         'desvio': float(desvio),
         'maior': float(maior),
         'menor': float(menor),
+        'mediana': float(mediana),
+        'moda': float(moda)
         
     }
     
