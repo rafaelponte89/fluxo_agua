@@ -10,40 +10,21 @@ from random import random
 from time import sleep
 import json
 
-
 def carregar_dataframe():
-    dataframe = pd.read_csv("fluxoagua.csv",sep = '[,|;]',engine='python')
-    dataframe.drop_duplicates('data', inplace=True) # Elimina dados duplicados em relação ao momento (data, hora, minutos, segundos iguais)
+    dataframe = pd.read_csv("fluxoagua.csv", sep='[,|;]', engine='python')
+    #dataframe.drop_duplicates('data', inplace=True) # Elimina dados duplicados em relação ao momento (data, hora, minutos, segundos iguais)
+
     return dataframe
 
 def retornar_comparador(valor):
-    comp = ""
-    if valor == '1':
-        comp = ">"
-    
-    elif valor == '2':
-        comp = ">="
-    
-    elif valor == '3':
-        comp = "<"
-    
-    elif valor == '4':
-        comp = "<="
-    
-    elif valor == '5':
-        comp = "=="
-    
-    elif valor == '6':
-        comp = "!="
-    
-    else:
-        pass
-    
-    return comp
-
+    comparadores = [">", ">=", "<", "<=", "==", "!="]
+    return comparadores[int(valor)]
+ 
+def retornar_operador(valor):
+    operadores = ["&", "|"]
+    return operadores[int(valor)]    
 
 def calcular_media(dataframe):
-    
     media = dataframe.mean()
     return media
     
@@ -53,66 +34,79 @@ def calcular_desvio(dataframe):
     
 def calcular_mediana(dataframe):
     mediana = dataframe.median()
-    
     return mediana
 
 def calcular_maior(dataframe):
     maior = dataframe.max()
-    
     return maior
 
 def calcular_menor(dataframe):
     menor = dataframe.min()
-    
     return menor
     
 def calcular_mediana(dataframe):
     mediana = dataframe.median()
-    
     return mediana
 
 def calcular_moda(dataframe):
     moda = dataframe.mode()
-    
     return moda
 
 def analisar_consumo(request):
     dataframe = carregar_dataframe()
-    dataframe.min
     tempo_inicial = request.GET.get('tempo_inicial')
     tempo_final = request.GET.get('tempo_final')
     op_inicial = request.GET.getlist('op_inicial')[0]
     op_final = request.GET.getlist('op_final')[0]
-    print(op_inicial,op_final)
+    op_logico = request.GET.getlist('op_logico')[0]
+  
+    print("Operadores")
+    print(op_inicial, op_final, op_logico)
     if len(tempo_inicial) == 0:
         tempo_inicial = "00:00:00"
     if len(tempo_final) == 0:
         tempo_final = "00:00:00"
   
     data_inicial = datetime.datetime.strptime(request.GET.get('data_inicial') + ' ' + tempo_inicial,'%Y-%m-%d %H:%M:%S')
-    data_final =  datetime.datetime.strptime(request.GET.get('data_final') + ' ' + tempo_final,'%Y-%m-%d %H:%M:%S')
+    data_final =  datetime.datetime.strptime(request.GET.get('data_final') + ' ' + tempo_final, '%Y-%m-%d %H:%M:%S')
   
-        
     comp_inicial = retornar_comparador(op_inicial)
     comp_final = retornar_comparador(op_final)
+    op_logico = retornar_operador(op_logico)
     
     # Convert the date to datetime64
     dataframe['data'] = pd.to_datetime(dataframe['data'], format='%d/%m/%Y %H:%M:%S')
     
+    expressao_consulta = '(dataframe["data"] ' + comp_inicial + ' data_inicial) ' + op_logico + ' (dataframe["data"] ' + comp_final +  ' data_final)'
+   
+    print(expressao_consulta)
+    selecao = (eval(expressao_consulta))
     
-    selecao = (eval('(dataframe["data"] ' + comp_inicial + ' data_inicial) & (dataframe["data"] ' + comp_final +  ' data_final)'))
     print(selecao)
     dataframe = dataframe[selecao]
     
+    # tratamento outlier (máximo e mínimo)
+    media = calcular_media(dataframe["medida"])
+    desvio = calcular_desvio(dataframe["medida"])
+    outlier_max = media + desvio
+    outlier_min = media - desvio
+    expressao_consulta = expressao_consulta + ' & (dataframe["medida"] <= outlier_max) & (dataframe["medida"] >= outlier_min)'
+    selecao = (eval(expressao_consulta))
+    dataframe = dataframe[selecao]
+    # fim do tratamento de outlier
     
     media = calcular_media(dataframe["medida"])
     desvio = calcular_desvio(dataframe["medida"])
     maior = calcular_maior(dataframe["medida"])
     menor = calcular_menor(dataframe["medida"])
-    mediana= calcular_mediana(dataframe["medida"])
+    mediana = calcular_mediana(dataframe["medida"])
     moda = calcular_moda(dataframe["medida"])
     
-    medidas = {
+    
+    print("Soma: ", dataframe["medida"].sum())
+    
+    try:
+        medidas = {
         'media': float(media),
         'desvio': float(desvio),
         'maior': float(maior),
@@ -120,15 +114,23 @@ def analisar_consumo(request):
         'mediana': float(mediana),
         'moda': float(moda)
         
-    }
+         }
+        json_medidas = json.dumps(medidas, indent=4)
+        print(medidas)
     
-    json_medidas = json.dumps(medidas, indent=4)
-    print(medidas)
+        print(type(data_inicial), data_final, tempo_inicial, tempo_final)
     
-  
-    print(type(data_inicial), data_final, tempo_inicial, tempo_final)
+        return JsonResponse(json_medidas, safe=False) 
+        
+    except:
+        
+        return HttpResponse('<span id="informacao" > <strong>Sem Informações a Exibir! <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-eye-slash text-primary" viewBox="0 0 16 16"> \
+  <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7.028 7.028 0 0 0-2.79.588l.77.771A5.944 5.944 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755-.165.165-.337.328-.517.486l.708.709z"/> \
+  <path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829l.822.822zm-2.943 1.299.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.829z"/> \
+  <path d="M3.35 5.47c-.18.16-.353.322-.518.487A13.134 13.134 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7.029 7.029 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884-12-12 .708-.708 12 12-.708.708z"/>\
+</svg> </strong> </span>') 
     
-    return JsonResponse(json_medidas, safe=False)   
+     
 def analisar_fluxo(request):
     return render(request,"ferramentas.html")
 

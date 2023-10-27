@@ -7,7 +7,7 @@
     <h1>Ferramenta de Análise de Consumo</h1>
   </div>
 
-  <div class="col-md-2">
+  <div class="col-md-3">
     <div class="mb-3">
       <label class="form-control">Data Inicial: </label>
     </div>
@@ -15,7 +15,10 @@
       <label class="form-control">Hora Inicial: </label>
     </div>
     <div class="mb-3">
-      <label class="form-control">Operação Inicial: </label>
+      <label class="form-control bg-warning">Operação Inicial: </label>
+    </div>
+    <div class="mb-3">
+      <label class="form-control bg-info">Operador Lógico: </label>
     </div>
     <div class="mb-3">
       <label class="form-control">Data Final: </label>
@@ -24,18 +27,15 @@
       <label class="form-control">Hora Final: </label>
     </div>
     <div class="mb-3">
-      <label class="form-control">Operação Final: </label>
+      <label class="form-control bg-warning">Operação Final: </label>
     </div>
   </div>
   <div class="col-md-2">
     <div class="mb-3">
-      <input
-        type="date"
-        class="form-control"
-        id="dataInicial"
-        aria-describedby="dataIniHelp"
-        placeholder="Data Inicial"
-      />
+      <input type="date" class="form-control" id="dataInicial"
+      aria-describedby="dataIniHelp" placeholder="Data Inicial"
+      
+       value = "{% now "Y-m-d" %}" />
     </div>
     <div class="mb-3">
       <input
@@ -44,29 +44,36 @@
         id="tempoInicial"
         aria-describedby="tempoIniHelp"
         step="1"
+        value = "00:00:00"
       />
     </div>
     <div class="mb-3">
       <select
         id="opDataInicial"
-        class="form-select"
+        class="form-select bg-warning"
         aria-label="Default select example"
       >
-        <option value="1">Maior</option>
-        <option value="2">Maior ou Igual</option>
-        <option value="3">Menor</option>
-        <option value="4">Menor ou Igual</option>
-        <option value="5">Igual</option>
-        <option selected value="6">Não Igual</option>
+        <option value="0">Maior</option>
+        <option value="1">Maior ou Igual</option>
+        <option value="2">Menor</option>
+        <option value="3">Menor ou Igual</option>
+        <option value="4">Igual</option>
+        <option selected value="5">Não Igual</option>
       </select>
     </div>
     <div class="mb-3">
-      <input
-        type="date"
-        class="form-control"
-        id="dataFinal"
-        aria-describedby="dataFinHelp"
-      />
+      <select
+        id="opLogico"
+        class="form-select bg-info"
+        aria-label="Default select example"
+      >
+        <option selected value="0">E</option>
+        <option value="1">Ou</option>
+      </select>
+    </div>
+    <div class="mb-3">
+      <input type="date" class="form-control" id="dataFinal"
+      aria-describedby="dataFinHelp" value = "{% now "Y-m-d" %}" />
     </div>
 
     <div class="mb-3">
@@ -76,28 +83,30 @@
         id="tempoFinal"
         aria-describedby="tempoFinHelp"
         step="1"
+        value = "00:00:00"
       />
     </div>
     <div class="mb-3">
       <select
         id="opDataFinal"
-        class="form-select"
+        class="form-select bg-warning"
         aria-label="Default select example"
       >
-        <option value="1">Maior</option>
-        <option value="2">Maior ou Igual</option>
-        <option value="3">Menor</option>
-        <option value="4">Menor ou Igual</option>
-        <option value="5">Igual</option>
-        <option selected value="6">Não Igual</option>
+        <option value="0">Maior</option>
+        <option value="1">Maior ou Igual</option>
+        <option value="2">Menor</option>
+        <option value="3">Menor ou Igual</option>
+        <option value="4">Igual</option>
+        <option selected value="5">Não Igual</option>
       </select>
     </div>
   </div>
-
-  <div class="col-md-8">
-    <canvas id="graficoMedidas" class="">
-      <!--Gráfico Medidas Aqui-->
+ 
+  <div id="graficos" class="col-md-7 d-flex justify-content-center">
+    <!--<canvas id="graficoMedidas" class="">
+      Gráfico Medidas Aqui
     </canvas>
+    -->
   </div>
 </div>
 <button id="executar" type="submit" class="btn btn-primary">Executar</button>
@@ -164,7 +173,8 @@
       tempinicial,
       tempfinal,
       opinicial,
-      opfinal
+      opfinal,
+      oplogico
     ) {
       $.get({
         url: "{% url 'analisarconsumo' %}",
@@ -175,16 +185,23 @@
           tempo_final: tempfinal,
           op_inicial: opinicial,
           op_final: opfinal,
+          op_logico: oplogico,
         },
       }).done(function (data) {
-        var objJson = JSON.parse(data);
-
-        get_chart(
-          Object.keys(objJson),
-          Object.values(objJson),
-          "graficoMedidas",
-          "Medidas"
-        );
+        try {
+          $("#informacao").remove();
+          $("#graficos").html("<canvas id='graficoMedidas' class=''> <!--Gráfico Aqui --!> </canvas>");
+          var objJson = JSON.parse(data);
+          get_chart(
+            Object.keys(objJson),
+            Object.values(objJson),
+            "graficoMedidas",
+            "Medidas"
+          );
+        } catch (error) {
+      
+            $("#graficos").html(data);
+        }
       });
     }
     $("#executar").click(function () {
@@ -194,7 +211,8 @@
         $("#tempoInicial").val(),
         $("#tempoFinal").val(),
         $("#opDataInicial").val(),
-        $("#opDataFinal").val()
+        $("#opDataFinal").val(),
+        $("#opLogico").val()
       );
 
       console.log($("#dataInicial").val());
